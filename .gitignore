@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+.pytest_cache/
+.DS_Store
+
+# Cached raw scrapes — large, regenerable, and not worth versioning.
+data/raw/
+
+# Never commit these.
+.env
+*.secret

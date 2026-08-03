@@ -1,0 +1,14 @@
+# Default build (official USCIS data only) needs just these two.
+requests>=2.31
+openpyxl>=3.1        # reads the official USCIS quarterly XLSX reports
+
+# Optional: only needed for the opt-in --reddit crowd layer. See the README on
+# Reddit's Responsible Builder Policy before enabling it.
+praw>=7.7
+
+# Deliberately absent: curl_cffi. It was here to clear Cloudflare on
+# egov.uscis.gov, but that gate is a JS challenge rather than a TLS-fingerprint
+# check and Chrome impersonation does not get through it. See sources/uscis.py.
+
+# Tests
+pytest>=8.0

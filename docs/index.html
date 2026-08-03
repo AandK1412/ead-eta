@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EAD ETA — how long is the I-765 queue really?</title>
+<meta name="description" content="Estimate your Form I-765 (EAD) wait from official USCIS data, and see how far the published processing time diverges from the agency's own backlog.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="page-head">
+  <h1>EAD ETA</h1>
+  <p class="tagline">How long is the I-765 queue really? Built entirely from
+     official USCIS data — no crowd-sourced guesswork.</p>
+  <p class="hint" id="meta-line">Loading…</p>
+</header>
+
+<main>
+
+  <!-- ------------------------------------------------ input -->
+  <section class="card" id="controls-card">
+    <div class="card-head">
+      <h2>Your filing</h2>
+      <p class="sub">Two fields. Nothing is uploaded — the calculation runs in your browser.</p>
+    </div>
+    <div class="control-row">
+      <label>
+        Receipt date
+        <input type="date" id="in-receipt">
+        <span class="hint">The date on your I-797C receipt notice.</span>
+      </label>
+      <label>
+        EAD category
+        <select id="in-category"></select>
+        <span class="hint" id="bucket-note"></span>
+      </label>
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------ result -->
+  <section class="card" id="hero" hidden>
+    <div class="card-head">
+      <h2>Where you stand</h2>
+      <p class="sub" id="hero-sub"></p>
+    </div>
+    <div class="tiles" id="hero-tiles"></div>
+    <p class="hint" id="hero-note"></p>
+  </section>
+
+  <!-- ------------------------------------------------ reality check -->
+  <section class="card" id="reality" hidden>
+    <div class="card-head">
+      <h2>What USCIS says vs. what its backlog implies</h2>
+      <p class="sub">Two readings of the same queue, from the same agency, in the
+         same quarter. They disagree — and the gap is the story.</p>
+    </div>
+    <div class="legend" id="legend-reality"></div>
+    <div class="chart-scroll"><div id="chart-reality" class="chart"></div></div>
+    <p class="hint" id="reality-verdict"></p>
+    <details class="fine">
+      <summary>What each bar actually measures</summary>
+      <ul>
+        <li><strong>Published processing time</strong> — the median of cases USCIS
+            <em>completed</em> this quarter. It describes finished cases, so it
+            systematically under-represents anyone still stuck in the queue.</li>
+        <li><strong>Backlog-implied wait</strong> — pending ÷ quarterly completions
+            (Little's Law). A <em>mean time in system</em> for everything currently
+            queued. Adjudication isn't strictly FIFO and long-stuck cases inflate
+            it, so read it as queue depth — an upper bound, not a median.</li>
+        <li><strong>You, so far</strong> — days since your receipt date.</li>
+      </ul>
+      <p>The first is a median and the second a mean of a right-skewed
+         distribution, so they are not strictly like-for-like. Compare direction
+         and magnitude, not decimals.</p>
+      <p><strong>Neither bar is the answer — the answer is between them.</strong>
+         Independent reporting for February 2026 put about 1.78 million I-765
+         cases pending with roughly 1.18 million of them (66%) waiting more than
+         six months, against a published average of 4.8 months. Those two facts
+         can't describe the same population: if the typical wait really were under
+         five months, two-thirds of the queue couldn't already be past six. But
+         the backlog-implied figure overshoots in the other direction, running
+         about 3× the reported average. Best current reading for the aggregate is
+         somewhere in the <strong>6–12 month</strong> range. Working shown in
+         <code>VALIDATION.md</code>.</p>
+    </details>
+  </section>
+
+  <!-- ------------------------------------------------ trend -->
+  <section class="card" id="trend" hidden>
+    <div class="card-head">
+      <h2>Nine years of median processing times</h2>
+      <p class="sub">National medians for each I-765 basis of filing, FY2016–FY2024.</p>
+    </div>
+    <div class="legend" id="legend-trend"></div>
+    <div class="chart-scroll"><div id="chart-trend" class="chart"></div></div>
+    <p class="hint" id="trend-note"></p>
+  </section>
+
+  <!-- ------------------------------------------------ queue -->
+  <section class="card" id="queue" hidden>
+    <div class="card-head">
+      <h2>The queue you're in</h2>
+      <p class="sub">How many I-765 cases are pending, and how many are already
+         past USCIS's own processing-time target.</p>
+    </div>
+    <div class="chart-scroll"><div id="chart-queue" class="chart"></div></div>
+    <p class="hint" id="queue-note"></p>
+  </section>
+
+  <!-- ------------------------------------------------ table -->
+  <section class="card" id="table-card" hidden>
+    <div class="card-head">
+      <h2>The numbers</h2>
+      <p class="sub">Everything the charts show, as text.</p>
+    </div>
+    <div class="chart-scroll"><table id="data-table"></table></div>
+  </section>
+
+  <!-- ------------------------------------------------ method -->
+  <section class="card" id="method">
+    <div class="card-head">
+      <h2>Method &amp; honest limits</h2>
+    </div>
+    <p>Every figure here comes from two USCIS publications: the quarterly
+       <em>All USCIS Application and Petition Form Types</em> report and the
+       <em>Net Backlog and Frontlog</em> report, plus the
+       <em>Historical Processing Times Trends FY2016–FY2024</em> factsheet.
+       Links are in the footer.</p>
+    <h3>What this can tell you</h3>
+    <ul>
+      <li>How your elapsed wait compares to the published median.</li>
+      <li>How deep the queue is for your category, in months of throughput.</li>
+      <li>Whether waits for your basis of filing have been rising or falling.</li>
+      <li>What share of pending cases are already past USCIS's own target.</li>
+    </ul>
+    <h3>What it can't</h3>
+    <ul>
+      <li><strong>No percentiles.</strong> USCIS publishes aggregate counts, not
+          per-case durations, so there is no honest way to derive a P80 or P90
+          from it. Anything claiming otherwise is modelling, not measuring.</li>
+      <li><strong>Coarse categories.</strong> USCIS reports four I-765 buckets.
+          OPT, STEM OPT, H-4 and L-2 all sit inside "All other", so they share a
+          number even though their real experiences differ.</li>
+      <li><strong>National, not per-center.</strong> No service-center breakdown.</li>
+      <li><strong>Quarterly lag.</strong> Figures trail real time by up to a quarter.</li>
+      <li><strong>Methodology shift.</strong> The historical series uses a cycle-time
+          method that differs from today's processing-time page. Read its shape,
+          don't subtract it from current figures.</li>
+    </ul>
+    <p class="hint">Not legal advice. This is a reading of public data — for
+       anything that matters, talk to an immigration attorney.</p>
+  </section>
+
+  <footer class="page-head" id="sources"></footer>
+
+</main>
+
+<div class="tooltip" id="tooltip" hidden></div>
+<script src="app.js"></script>
+</body>
+</html>
