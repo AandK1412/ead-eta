@@ -299,11 +299,14 @@ function drawReality(bucket, receipt) {
   const p = state.official?.premium;
   if (state.input.premium && p && receipt) {
     const deadline = addBusinessDays(receipt, p.business_days);
+    const calDays = Math.round((deadline - receipt) / 86400000);
     rows.unshift({
       key: 'Premium guarantee',
-      v: +((deadline - receipt) / 86400000 / MONTH).toFixed(1),
+      v: +(calDays / MONTH).toFixed(1),
       color: 'var(--series-4)',
-      note: `${p.business_days} business days`,
+      // The axis is calendar months, so a bar labelled only "30 business days"
+      // reads like an error next to a 1.4 mo value. Show the conversion.
+      note: `${p.business_days} business days = ${calDays} calendar`,
     });
   }
 
