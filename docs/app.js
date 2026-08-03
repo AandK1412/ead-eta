@@ -13,7 +13,7 @@
 const $ = (sel) => document.querySelector(sel);
 const MONTH = 30.44;
 
-const state = { official: null, input: { receipt: '', category: '' } };
+const state = { official: null, input: { receipt: '', category: '', premium: false } };
 
 /* ------------------------------------------------------------- utilities */
 
@@ -75,6 +75,36 @@ function addDays(date, days) {
   const out = new Date(date.getTime());
   out.setDate(out.getDate() + days);
   return out;
+}
+
+/** Add N business days, skipping weekends.
+ *
+ * Federal holidays are NOT excluded — there are 11 of them and which ones fall
+ * inside a given window depends on the filing date, so a real answer needs a
+ * holiday calendar. The result is therefore slightly optimistic and the UI
+ * says so rather than presenting it as exact.
+ */
+function addBusinessDays(date, n) {
+  const out = new Date(date.getTime());
+  let left = n;
+  while (left > 0) {
+    out.setDate(out.getDate() + 1);
+    const day = out.getDay();
+    if (day !== 0 && day !== 6) left--;
+  }
+  return out;
+}
+
+function businessDaysBetween(from, to) {
+  if (to <= from) return 0;
+  let count = 0;
+  const cur = new Date(from.getTime());
+  while (cur < to) {
+    cur.setDate(cur.getDate() + 1);
+    const day = cur.getDay();
+    if (day !== 0 && day !== 6) count++;
+  }
+  return count;
 }
 
 function parseISO(s) {
@@ -175,6 +205,45 @@ function renderHero(bucket, receipt, futureDate) {
 
   const past = bucket.share_past_target;
 
+  // Premium filers are on a completely different clock, and the one thing they
+  // need to know is whether USCIS has blown the guarantee — because that
+  // triggers a fee refund. Lead with that rather than with queue statistics.
+  const p = state.official?.premium;
+  if (state.input.premium && p) {
+    const deadline = addBusinessDays(receipt, p.business_days);
+    const lapsed = deadline < today;
+    const bdElapsed = businessDaysBetween(receipt, today);
+
+    $('#hero-sub').textContent =
+      `Filed ${fmtDate(receipt)} with premium processing · ${p.business_days}-business-day guarantee`;
+
+    $('#hero-tiles').innerHTML = [
+      tile('Waiting so far', `${fmtInt(elapsedDays)} days`,
+        `${fmtInt(bdElapsed)} business days`),
+      tile(`${p.business_days}-business-day deadline`, fmtDate(deadline),
+        lapsed ? 'already passed' : `in ${fmtInt(businessDaysBetween(today, deadline))} business days`,
+        lapsed ? 'warn' : ''),
+      tile('Standard median for comparison', pub != null ? `${pub.toFixed(1)} mo` : '—',
+        'what you would face without premium'),
+      tile('Fee refund', lapsed ? 'Possibly owed' : 'Not yet',
+        lapsed ? 'if no action was taken' : 'guarantee still running',
+        lapsed ? 'warn' : ''),
+    ].join('');
+
+    $('#hero-note').innerHTML = lapsed
+      ? `<strong>USCIS's deadline has passed.</strong> If it took no adjudicative
+         action on your case by ${fmtDate(deadline)}, it owes you a refund of the
+         premium processing fee — the case still gets processed. Note that an RFE
+         <em>counts</em> as action and restarts a fresh ${p.business_days}-day
+         period, so check whether one was issued before assuming a refund is due.
+         This date excludes federal holidays, so treat it as slightly early.`
+      : `Your guarantee runs to ${fmtDate(deadline)}. If USCIS takes no
+         adjudicative action by then it must refund the premium fee. Bear in mind
+         the guarantee covers a <em>decision or an RFE</em>, not an approval, and
+         this date doesn't subtract federal holidays.`;
+    return;
+  }
+
   $('#hero-sub').textContent =
     `Filed ${fmtDate(receipt)} · USCIS reports this under "${shortBucket(bucket.bucket)}"`;
 
@@ -226,6 +295,18 @@ function drawReality(bucket, receipt) {
     { key: 'Backlog-implied', v: bucket.implied_months, color: 'var(--series-3)',
       note: 'pending ÷ throughput' },
   ];
+
+  const p = state.official?.premium;
+  if (state.input.premium && p && receipt) {
+    const deadline = addBusinessDays(receipt, p.business_days);
+    rows.unshift({
+      key: 'Premium guarantee',
+      v: +((deadline - receipt) / 86400000 / MONTH).toFixed(1),
+      color: 'var(--series-4)',
+      note: `${p.business_days} business days`,
+    });
+  }
+
   if (elapsedMo != null) {
     rows.push({ key: 'You, so far', v: +elapsedMo.toFixed(1), color: 'var(--series-1)',
       note: 'days since receipt' });
@@ -708,6 +789,42 @@ function renderTable(bucket) {
     <tbody>${histRows}</tbody>` : ''}`;
 }
 
+/** Enable the premium control only where USCIS actually allows it.
+ *
+ * Silently ignoring the selection for an ineligible category would be worse
+ * than disabling it — someone could conclude they're on a 30-day clock when no
+ * such option exists for their category.
+ */
+function syncPremiumControl() {
+  const sel = $('#in-premium');
+  const note = $('#premium-note-input');
+  const p = state.official?.premium;
+  const meta = categoryMeta(state.input.category);
+
+  if (!p) { sel.disabled = true; note.textContent = ''; return; }
+
+  if (!state.input.category) {
+    sel.disabled = true;
+    sel.value = '';
+    note.textContent = 'Pick a category first — only F-1 OPT categories qualify.';
+    return;
+  }
+
+  if (!meta?.premium_eligible) {
+    sel.disabled = true;
+    sel.value = '';
+    note.textContent = `Not available for this category. On Form I-765, USCIS `
+      + `allows premium processing for ${p.eligible_label}.`;
+    return;
+  }
+
+  sel.disabled = false;
+  sel.value = state.input.premium ? '1' : '';
+  note.textContent = state.input.premium
+    ? `${p.business_days} business days, or USCIS refunds the fee.`
+    : 'Eligible — select if you filed or upgraded with Form I-907.';
+}
+
 /* --------------------------------------------------------------- render */
 
 function render() {
@@ -744,9 +861,12 @@ function render() {
   drawQueue(bucket);
   renderTable(bucket);
 
+  syncPremiumControl();
+
   const params = new URLSearchParams();
   if (state.input.receipt) params.set('r', state.input.receipt);
   if (state.input.category) params.set('c', state.input.category);
+  if (state.input.premium) params.set('p', '1');
   history.replaceState(null, '', params.toString() ? `?${params}` : location.pathname);
 }
 
@@ -771,6 +891,10 @@ async function init() {
   const params = new URLSearchParams(location.search);
   state.input.receipt = params.get('r') || '';
   state.input.category = params.get('c') || '';
+  // A URL can carry p=1 with an ineligible category; validate rather than trust.
+  state.input.premium = params.get('p') === '1'
+    && !!(official.categories || []).find(
+      (c) => c.id === params.get('c') && c.premium_eligible);
 
   // Stop the picker offering future dates. render() still guards, because a
   // URL parameter bypasses the input entirely.
@@ -782,7 +906,16 @@ async function init() {
     state.input.receipt = e.target.value; render();
   });
   sel.addEventListener('change', (e) => {
-    state.input.category = e.target.value; render();
+    state.input.category = e.target.value;
+    // Switching to an ineligible category must clear a stale premium selection,
+    // or the results would keep showing a guarantee that doesn't apply.
+    if (!categoryMeta(state.input.category)?.premium_eligible) {
+      state.input.premium = false;
+    }
+    render();
+  });
+  $('#in-premium').addEventListener('change', (e) => {
+    state.input.premium = e.target.value === '1'; render();
   });
 
   const when = official.generated ? new Date(official.generated) : null;

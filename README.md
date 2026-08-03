@@ -6,9 +6,10 @@ A static, GitHub Pages–hostable tool that shows where your EAD application sit
 in the USCIS queue — built entirely from **official USCIS data**, with no
 crowd-sourced guesswork and no API credentials.
 
-Enter your receipt date and category; it returns how your wait compares to the
-published processing time, how deep the backlog actually is, and nine years of
-official medians for your basis of filing.
+Enter your receipt date, category, and whether you filed with premium
+processing; it returns how your wait compares to the published processing time,
+how deep the backlog actually is, and nine years of official medians for your
+basis of filing.
 
 ---
 
@@ -103,6 +104,19 @@ stated in the UI:
 * **Action, not approval.** An RFE satisfies the guarantee and stops the clock;
   responding starts a fresh 30-day period. Premium buys a fast decision *or a
   fast question*.
+
+Selecting premium switches the whole result view onto that clock: the page
+computes the actual **30-business-day deadline** from your receipt date
+(skipping weekends), says whether it has lapsed, and — the genuinely actionable
+part — flags that **a lapsed guarantee means USCIS owes you a refund of the
+premium fee**, while warning that an RFE counts as action and restarts the
+period. Federal holidays are *not* subtracted, so the date is deliberately
+described as slightly early rather than exact.
+
+The control is disabled for every ineligible category with an explanation, and
+switching to an ineligible category clears a stale selection — a `p=1` in the
+URL is validated rather than trusted, so a shared link can't put someone on a
+30-day clock that doesn't exist for their category.
 
 The **fee is deliberately not hardcoded.** It changed in 2026 and USCIS publishes
 it only on its fee schedule, which isn't machine-readable — so the site links to
