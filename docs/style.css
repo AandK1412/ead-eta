@@ -74,7 +74,44 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-main, .page-head, footer, .banner { max-width: 60rem; margin-inline: auto; }
+main, .page-head, footer, .banner { max-width: 76rem; margin-inline: auto; }
+
+/* ---------------------------------------------------------- layout
+   Controls pinned left, results centre. The sidebar sticks so inputs stay
+   reachable while reading a long results column. minmax(0,1fr) on the results
+   track is load-bearing: without it the charts' min-width would force the grid
+   wider than the viewport instead of scrolling inside their own containers. */
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(15rem, 17rem) minmax(0, 1fr);
+  gap: 1.25rem;
+  /* Deliberately NOT align-items:start. A start-aligned sidebar shrinks to its
+     own content height, which leaves position:sticky no track to travel along
+     and it scrolls away. Stretching the column gives the sticky card the full
+     row height to move within. */
+  align-items: stretch;
+}
+
+.sidebar > .card {
+  position: sticky;
+  top: 1rem;
+  margin-bottom: 0;
+}
+
+/* The control row is a single column once it's in a narrow sidebar. */
+.sidebar .control-row { grid-template-columns: 1fr; }
+
+@media (max-width: 60rem) {
+  /* minmax(0,1fr), not 1fr: a bare 1fr track keeps min-width:auto, so the
+     sidebar refuses to shrink below the control row's min-content and pushes
+     the whole page into horizontal scroll on a phone. */
+  .layout { grid-template-columns: minmax(0, 1fr); }
+  .sidebar > .card { position: static; margin-bottom: 1.25rem; }
+  .sidebar .control-row {
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  }
+}
 
 /* ---------------------------------------------------------- head */
 
