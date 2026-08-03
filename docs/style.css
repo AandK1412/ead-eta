@@ -99,8 +99,17 @@ main, .page-head, footer, .banner { max-width: 76rem; margin-inline: auto; }
   margin-bottom: 0;
 }
 
-/* The control row is a single column once it's in a narrow sidebar. */
-.sidebar .control-row { grid-template-columns: 1fr; }
+/* The control row is a single column once it's in a narrow sidebar.
+   minmax(0,1fr) again, not 1fr: a select's min-content width is set by its
+   longest <option> ("All I-765 (no category chosen)"), which is wider than the
+   sidebar. With an auto minimum the track refuses to shrink and every control
+   spills out of the card. */
+.sidebar .control-row { grid-template-columns: minmax(0, 1fr); }
+
+/* Grid/flex children default to min-width:auto too — the labels wrap the
+   selects, so they need to be allowed to shrink as well. */
+.control-row > label { min-width: 0; }
+.control-row select, .control-row input { max-width: 100%; }
 
 @media (max-width: 60rem) {
   /* minmax(0,1fr), not 1fr: a bare 1fr track keeps min-width:auto, so the
