@@ -40,15 +40,34 @@ FALLBACK = {
 # USCIS's coarse buckets -> this project's category ids. "All Other" is the
 # catch-all that actually contains OPT, H-4 and L-2, which is why the official
 # numbers can only ever be a coarse reference line.
+#
+# The two reports do not agree on how many slices exist. The quarterly forms
+# report has FOUR I-765 rows (asylum / adjustment / DACA / all other) and states
+# that they sum to the form total. The net backlog report has SIX, additionally
+# breaking out "Premium Processed" and "Parolees". So premium and parole cases
+# are counted inside one of the four in the quarterly report while getting their
+# own line in the backlog report — which means they have a backlog figure but no
+# pending, completions or published time of their own. Earlier versions matched
+# the two reports by key and silently dropped both extra rows.
 BUCKET_MAP = {
     "asylum": ["c08_asylum"],
     "adjustment of status": ["c09_aos"],
     "daca": ["c33_daca"],
-    "parolees": ["c11_parole"],
-    "premium processed": [],
     "all other": ["c03a_preopt", "c03b_opt", "c03b_stem", "c26_h4",
-                  "a17_a18_l2e2", "a12_c19_tps", "a05_asylee", "other"],
+                  "a17_a18_l2e2", "a12_c19_tps", "a05_asylee", "other",
+                  "c11_parole"],
 }
+
+# The historical factsheet slices differently again: it *does* break out parole,
+# but has no DACA series. Kept separate from BUCKET_MAP so selecting "Parole"
+# highlights the parole trend line rather than the catch-all.
+HISTORY_MAP = {
+    "c08_asylum": "asylum",
+    "c09_aos": "adjustment of status",
+    "c11_parole": "parolees",
+    "c33_daca": None,          # not in the factsheet
+}
+HISTORY_DEFAULT = "all other"
 
 
 def _bucket_key(title: str) -> str | None:
@@ -133,14 +152,25 @@ def fetch() -> dict | None:
         print("  ! no I-765 rows found in the quarterly report")
         return None
 
-    # Net backlog: pending cases already past USCIS's own target.
+    # Net backlog: pending cases already past USCIS's own target. Every row is
+    # kept, including the two with no counterpart in the quarterly report.
+    backlog_detail: list[dict] = []
     try:
         for row in _rows(_get(urls["backlog"]), 3):
             key = _bucket_key(row[1])
-            if key and key in buckets and isinstance(row[2], (int, float)):
+            if not key or not isinstance(row[2], (int, float)):
+                continue
+            value = int(row[2])
+            backlog_detail.append({
+                "bucket": key,
+                "label": str(row[1]),
+                "net_backlog": value,
+                "in_quarterly_report": key in buckets,
+            })
+            if key in buckets:
                 b = buckets[key]
-                b["net_backlog"] = int(row[2])
-                b["share_past_target"] = (round(row[2] / b["pending"], 3)
+                b["net_backlog"] = value
+                b["share_past_target"] = (round(value / b["pending"], 3)
                                           if b["pending"] else None)
     except requests.RequestException as exc:
         print(f"  ! USCIS net backlog report: {exc}")
@@ -154,6 +184,7 @@ def fetch() -> dict | None:
         "period": period,
         "source_urls": urls,
         "buckets": list(buckets.values()),
+        "backlog_detail": backlog_detail,
     }
 
 

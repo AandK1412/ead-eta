@@ -52,8 +52,10 @@ python -m scraper.build            # official USCIS data, no credentials
 python -m http.server 8765 --directory docs
 ```
 
-Open <http://localhost:8765>. The site runs immediately on demo data, with a
-banner saying so. To get real data, add Reddit credentials below.
+Open <http://localhost:8765>. That's real USCIS data on first run — there is no
+demo mode to opt out of and nothing to configure.
+
+Live at **<https://aandk1412.github.io/ead-eta/>**.
 
 ---
 
@@ -69,6 +71,47 @@ pulls everything and writes `docs/data/official.json`. Three publications:
 | Quarterly *All USCIS Application and Petition Form Types* (XLSX) | Receipts, completions, pending, published processing time, per I-765 bucket | `sources/uscis_bulk.py` |
 | *Net Backlog and Frontlog* (XLSX) | Pending cases past USCIS's own target | `sources/uscis_bulk.py` |
 | *Historical Processing Times Trends FY2016–FY2024* (PDF) | Nine years of national medians by basis of filing | `sources/uscis_history.py` |
+| *How Do I Request Premium Processing* | I-765 premium eligibility and the 30-business-day guarantee | `sources/uscis_premium.py` |
+
+**The three reports slice Form I-765 three different ways**, which is the main
+source of subtle bugs here:
+
+| Slice | Quarterly | Backlog | Factsheet |
+|---|:--:|:--:|:--:|
+| Asylum | ✓ | ✓ | ✓ |
+| Adjustment of status | ✓ | ✓ | ✓ |
+| DACA | ✓ | ✓ | — |
+| All other | ✓ | ✓ | ✓ |
+| Parolees | — | ✓ | ✓ |
+| Premium processed | — | ✓ | — |
+
+Matching the reports on bucket name alone silently drops Premium Processed
+(400 past target) and Parolees (16,500) and highlights the wrong trend line for
+parole. `BUCKET_MAP` and `HISTORY_MAP` are therefore kept separate, and every
+backlog row reaches the front end via `backlog_detail` whether or not it has a
+quarterly counterpart.
+
+### Premium processing
+
+Only F-1 students in **(c)(3)(A), (c)(3)(B) and (c)(3)(C)** can request it on an
+I-765. USCIS guarantees **adjudicative action within 30 business days** — around
+six calendar weeks — or it refunds the fee. Two things the headline hides, both
+stated in the UI:
+
+* **Business days, not calendar days.** Reading it as "30 days" understates the
+  window by roughly 40%.
+* **Action, not approval.** An RFE satisfies the guarantee and stops the clock;
+  responding starts a fresh 30-day period. Premium buys a fast decision *or a
+  fast question*.
+
+The **fee is deliberately not hardcoded.** It changed in 2026 and USCIS publishes
+it only on its fee schedule, which isn't machine-readable — so the site links to
+the schedule rather than printing a number that could go stale on a page someone
+uses to make a four-figure decision. A test asserts no dollar amount is baked in.
+
+Worth noting from the agency's own figures: **400** premium-processed I-765 cases
+are past target, against **682,900** in "All other". The guarantee appears to
+hold at scale.
 
 URLs for the two XLSX reports are discovered from the USCIS data page each run,
 so a new quarter is picked up automatically. The historical table is transcribed
@@ -220,6 +263,7 @@ scraper/
   sources/
     uscis_bulk.py   quarterly volumes + net backlog  <- the default source
     uscis_history.py  FY2016-FY2024 median trend     <- the default source
+    uscis_premium.py  I-907 premium processing rules <- the default source
     uscis.py        egov API (Cloudflare-blocked, unused)
     reddit_api.py   official OAuth API (opt-in, --reddit)
     pullpush.py     historical archive (opt-in, best effort)
@@ -227,6 +271,7 @@ docs/               the site — static, no build step, no dependencies
 tests/
   test_parse.py     parser unit tests, no network
   test_official.py  bucket mapping + Little's Law, no network
+  test_premium.py   premium rules + report-slicing asymmetry, no network
   validate_live.py  run the parser over a real thread and report hit rate
 ```
 

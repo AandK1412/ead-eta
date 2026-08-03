@@ -18,7 +18,7 @@ import sys
 from datetime import datetime, timedelta, timezone
 
 from . import config, parse, survival
-from .sources import pullpush, reddit_api, uscis_bulk, uscis_history
+from .sources import pullpush, reddit_api, uscis_bulk, uscis_history, uscis_premium
 
 
 # ---------------------------------------------------------------------------
@@ -219,9 +219,18 @@ def write_official(bulk: dict | None, history: dict) -> None:
         "period": (bulk or {}).get("period"),
         "buckets": (bulk or {}).get("buckets", []),
         "source_urls": (bulk or {}).get("source_urls", {}),
-        # Users think in terms of their own EAD category, not USCIS's four
-        # coarse buckets, so the UI offers categories and maps them to buckets.
-        "categories": [{"id": c["id"], "label": c["label"]} for c in config.CATEGORIES],
+        # Users think in terms of their own EAD category, not USCIS's coarse
+        # buckets. Each category carries both mappings because the quarterly
+        # report and the historical factsheet slice the form differently.
+        "categories": [{
+            "id": c["id"],
+            "label": c["label"],
+            "history_bucket": uscis_bulk.HISTORY_MAP.get(
+                c["id"], uscis_bulk.HISTORY_DEFAULT),
+            "premium_eligible": c["id"] in uscis_premium.ELIGIBLE_CATEGORIES,
+        } for c in config.CATEGORIES],
+        "backlog_detail": (bulk or {}).get("backlog_detail", []),
+        "premium": uscis_premium.payload(),
         "history": history,
     }
     with open(path, "w", encoding="utf-8") as fh:

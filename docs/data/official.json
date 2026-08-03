@@ -1,5 +1,5 @@
 {
- "generated": "2026-08-03T01:00:12+00:00",
+ "generated": "2026-08-03T01:46:36+00:00",
  "period": "FY2026 Q1",
  "buckets": [
   {
@@ -68,7 +68,8 @@
     "a17_a18_l2e2",
     "a12_c19_tps",
     "a05_asylee",
-    "other"
+    "other",
+    "c11_parole"
    ],
    "net_backlog": 682900,
    "share_past_target": 0.78
@@ -81,53 +82,138 @@
  "categories": [
   {
    "id": "c03b_stem",
-   "label": "STEM OPT extension \u2014 (c)(3)(C)"
+   "label": "STEM OPT extension \u2014 (c)(3)(C)",
+   "history_bucket": "all other",
+   "premium_eligible": true
   },
   {
    "id": "c03a_preopt",
-   "label": "Pre-completion OPT \u2014 (c)(3)(A)"
+   "label": "Pre-completion OPT \u2014 (c)(3)(A)",
+   "history_bucket": "all other",
+   "premium_eligible": true
   },
   {
    "id": "c03b_opt",
-   "label": "Post-completion OPT \u2014 (c)(3)(B)"
+   "label": "Post-completion OPT \u2014 (c)(3)(B)",
+   "history_bucket": "all other",
+   "premium_eligible": true
   },
   {
    "id": "c08_asylum",
-   "label": "Asylum pending \u2014 (c)(8)"
+   "label": "Asylum pending \u2014 (c)(8)",
+   "history_bucket": "asylum",
+   "premium_eligible": false
   },
   {
    "id": "c09_aos",
-   "label": "Adjustment of status pending \u2014 (c)(9)"
+   "label": "Adjustment of status pending \u2014 (c)(9)",
+   "history_bucket": "adjustment of status",
+   "premium_eligible": false
   },
   {
    "id": "c26_h4",
-   "label": "H-4 spouse \u2014 (c)(26)"
+   "label": "H-4 spouse \u2014 (c)(26)",
+   "history_bucket": "all other",
+   "premium_eligible": false
   },
   {
    "id": "a17_a18_l2e2",
-   "label": "L-2 / E-2 spouse \u2014 (a)(17)/(a)(18)"
+   "label": "L-2 / E-2 spouse \u2014 (a)(17)/(a)(18)",
+   "history_bucket": "all other",
+   "premium_eligible": false
   },
   {
    "id": "a05_asylee",
-   "label": "Granted asylum \u2014 (a)(5)"
+   "label": "Granted asylum \u2014 (a)(5)",
+   "history_bucket": "all other",
+   "premium_eligible": false
   },
   {
    "id": "c11_parole",
-   "label": "Parole \u2014 (c)(11)"
+   "label": "Parole \u2014 (c)(11)",
+   "history_bucket": "parolees",
+   "premium_eligible": false
   },
   {
    "id": "a12_c19_tps",
-   "label": "TPS \u2014 (a)(12)/(c)(19)"
+   "label": "TPS \u2014 (a)(12)/(c)(19)",
+   "history_bucket": "all other",
+   "premium_eligible": false
   },
   {
    "id": "c33_daca",
-   "label": "DACA \u2014 (c)(33)"
+   "label": "DACA \u2014 (c)(33)",
+   "history_bucket": null,
+   "premium_eligible": false
   },
   {
    "id": "other",
-   "label": "Other / unspecified"
+   "label": "Other / unspecified",
+   "history_bucket": "all other",
+   "premium_eligible": false
   }
  ],
+ "backlog_detail": [
+  {
+   "bucket": "premium processed",
+   "label": "Application for Employment Authorization (Premium Processed)",
+   "net_backlog": 400,
+   "in_quarterly_report": false
+  },
+  {
+   "bucket": "asylum",
+   "label": "Application for Employment Authorization (Asylum)",
+   "net_backlog": 0,
+   "in_quarterly_report": true
+  },
+  {
+   "bucket": "adjustment of status",
+   "label": "Application for Employment Authorization (Adjustment Of Status)",
+   "net_backlog": 286500,
+   "in_quarterly_report": true
+  },
+  {
+   "bucket": "parolees",
+   "label": "Application for Employment Authorization (Parolees)",
+   "net_backlog": 16500,
+   "in_quarterly_report": false
+  },
+  {
+   "bucket": "daca",
+   "label": "Application for Employment Authorization (DACA)",
+   "net_backlog": 0,
+   "in_quarterly_report": true
+  },
+  {
+   "bucket": "all other",
+   "label": "Application for Employment Authorization (All Other)",
+   "net_backlog": 682900,
+   "in_quarterly_report": true
+  }
+ ],
+ "premium": {
+  "business_days": 30,
+  "approx_calendar_days": 42,
+  "eligible_categories": [
+   "c03a_preopt",
+   "c03b_opt",
+   "c03b_stem"
+  ],
+  "eligible_label": "F-1 students only \u2014 (c)(3)(A), (c)(3)(B), (c)(3)(C)",
+  "guarantee": "USCIS guarantees adjudicative action within 30 business days, or it refunds the premium processing fee.",
+  "caveats": [
+   "30 <strong>business</strong> days \u2014 about six calendar weeks, not one month.",
+   "The guarantee is on <strong>adjudicative action</strong>, not approval. An RFE counts as action and stops the clock; a fresh 30-day period starts once you respond.",
+   "After approval, USCIS says the card itself should be produced within about two weeks, then mailed.",
+   "You can file Form I-907 with your I-765 or upgrade a case that is already pending, online or through the Chicago Lockbox."
+  ],
+  "links": {
+   "source": "https://www.uscis.gov/forms/all-forms/how-do-i-request-premium-processing",
+   "fee_schedule": "https://www.uscis.gov/forms/filing-fees",
+   "form": "https://www.uscis.gov/i-907"
+  },
+  "verified": "2026-08-03"
+ },
  "history": {
   "fiscal_years": [
    2016,

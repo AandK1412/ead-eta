@@ -339,6 +339,84 @@ function renderVerdict(bucket) {
   $('#reality-verdict').innerHTML = lead + flow + backlog;
 }
 
+/* ---------------------------------------------------- premium processing */
+
+function categoryMeta(id) {
+  return (state.official?.categories || []).find((c) => c.id === id) || null;
+}
+
+function backlogRow(key) {
+  return (state.official?.backlog_detail || []).find((b) => b.bucket === key) || null;
+}
+
+function drawPremium(bucket, receipt) {
+  const card = $('#premium');
+  const p = state.official?.premium;
+  if (!p) { card.hidden = true; return; }
+
+  const meta = categoryMeta(state.input.category);
+  const eligible = !!meta?.premium_eligible;
+
+  // Only surface this where it's actionable, or where the user has picked
+  // nothing yet and might not know it exists.
+  if (state.input.category && !eligible) { card.hidden = true; return; }
+  card.hidden = false;
+
+  const premiumBacklog = backlogRow('premium processed');
+  const yourBacklog = bucket ? backlogRow(bucket.bucket) : null;
+
+  $('#premium-sub').innerHTML = eligible
+    ? `Your category is eligible. USCIS guarantees adjudicative action within
+       <strong>${p.business_days} business days</strong> or refunds the fee.`
+    : `Available for ${p.eligible_label}. Select one of those categories to see
+       how it compares to your queue.`;
+
+  const tiles = [
+    tile('Guaranteed window', `${p.business_days} business days`,
+      `about ${p.approx_calendar_days} calendar days`),
+  ];
+
+  if (bucket?.published_months != null) {
+    const mult = (bucket.published_months * MONTH) / p.approx_calendar_days;
+    tiles.push(tile('vs. your queue', `${mult.toFixed(1)}× faster`,
+      `standard published median is ${bucket.published_months.toFixed(1)} mo`));
+  }
+  if (premiumBacklog) {
+    tiles.push(tile('Premium cases past target', fmtInt(premiumBacklog.net_backlog),
+      yourBacklog?.net_backlog
+        ? `vs ${fmtInt(yourBacklog.net_backlog)} in your bucket`
+        : 'across all premium I-765 filings'));
+  }
+  $('#premium-tiles').innerHTML = tiles.join('');
+
+  let note = '';
+  if (premiumBacklog && yourBacklog?.net_backlog) {
+    note = `USCIS's own backlog report lists <strong>${fmtInt(premiumBacklog.net_backlog)}</strong>
+      premium-processed I-765 cases past target, against
+      <strong>${fmtInt(yourBacklog.net_backlog)}</strong> in your bucket. On the
+      agency's own numbers the guarantee is being met at scale.`;
+  }
+  if (eligible && receipt) {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const elapsed = Math.round((today - receipt) / 86400000);
+    note += elapsed > p.approx_calendar_days
+      ? ` You are already ${fmtInt(elapsed)} days in, so upgrading now would start a
+         fresh ${p.business_days}-business-day clock from the date USCIS receives
+         Form I-907 — not from your original receipt date.`
+      : ` You can upgrade a pending case at any point; the clock starts when USCIS
+         receives Form I-907.`;
+  }
+  $('#premium-note').innerHTML = note;
+
+  $('#premium-caveats').innerHTML = p.caveats.map((c) => `<li>${c}</li>`).join('');
+  $('#premium-links').innerHTML =
+    `<a href="${p.links.source}">USCIS premium processing rules</a> ·
+     <a href="${p.links.fee_schedule}">current fee schedule</a> ·
+     <a href="${p.links.form}">Form I-907</a>.
+     The fee changed in 2026 and USCIS publishes it only on the fee schedule, so
+     it isn't reproduced here — check the link before filing.`;
+}
+
 /* ---------------------------------------------------------------- trend */
 
 const TREND_COLORS = ['var(--series-1)', 'var(--series-2)', 'var(--series-3)', 'var(--series-4)'];
@@ -641,13 +719,28 @@ function render() {
   const bucket = bucketFor(state.input.category);
 
   const noteEl = $('#bucket-note');
-  noteEl.textContent = bucket
-    ? `USCIS reports this under "${shortBucket(bucket.bucket)}".`
-    : '';
+  const histKey = categoryMeta(state.input.category)?.history_bucket;
+  const ownBacklog = histKey && histKey !== bucket?.bucket ? backlogRow(histKey) : null;
+
+  if (!bucket) {
+    noteEl.textContent = '';
+  } else if (ownBacklog && !ownBacklog.in_quarterly_report) {
+    // e.g. parole: broken out in the backlog report, folded into the four-way
+    // split in the quarterly one. Say so rather than implying a clean match.
+    noteEl.textContent = `USCIS gives this its own line in the backlog report `
+      + `(${fmtInt(ownBacklog.net_backlog)} past target) but folds it into `
+      + `"${shortBucket(bucket.bucket)}" for the quarterly figures below.`;
+  } else {
+    noteEl.textContent = `USCIS reports this under "${shortBucket(bucket.bucket)}".`;
+  }
 
   renderHero(bucket, receipt, futureDate);
   drawReality(bucket, receipt);
-  drawTrend(bucket?.bucket);
+  drawPremium(bucket, receipt);
+  // The factsheet slices differently from the quarterly report — parole has its
+  // own history series but no quarterly row — so the trend uses its own mapping.
+  drawTrend(categoryMeta(state.input.category)?.history_bucket
+    || (state.input.category ? null : undefined));
   drawQueue(bucket);
   renderTable(bucket);
 
