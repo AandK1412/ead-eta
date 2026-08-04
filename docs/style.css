@@ -84,7 +84,11 @@ main, .page-head, footer, .banner { max-width: 76rem; margin-inline: auto; }
 
 .layout {
   display: grid;
-  grid-template-columns: minmax(15rem, 17rem) minmax(0, 1fr);
+  /* 19rem upper bound is measured, not guessed: the widest <option>
+     ("L-2 / E-2 spouse — (a)(17)/(a)(18)") renders at 212px, plus the select's
+     padding, its disclosure arrow and the card's padding. Narrower and the
+     native select clips its own text. */
+  grid-template-columns: minmax(16rem, 19rem) minmax(0, 1fr);
   gap: 1.25rem;
   /* Deliberately NOT align-items:start. A start-aligned sidebar shrinks to its
      own content height, which leaves position:sticky no track to travel along
@@ -110,6 +114,22 @@ main, .page-head, footer, .banner { max-width: 76rem; margin-inline: auto; }
    selects, so they need to be allowed to shrink as well. */
 .control-row > label { min-width: 0; }
 .control-row select, .control-row input { max-width: 100%; }
+
+/* Stacked in a sidebar the controls need more vertical separation than they do
+   in a row, and the hints should stay subordinate to the inputs. */
+.sidebar .control-row { gap: 1.15rem; }
+.sidebar .control-row > label { gap: .35rem; }
+.sidebar .control-row > label + label {
+  border-top: 1px solid var(--border);
+  padding-top: 1.15rem;
+}
+.sidebar .hint {
+  font-size: .76rem;
+  line-height: 1.45;
+  margin: 0;
+  color: var(--text-muted);
+}
+.sidebar .card-head { margin-bottom: 1.1rem; }
 
 @media (max-width: 60rem) {
   /* minmax(0,1fr), not 1fr: a bare 1fr track keeps min-width:auto, so the

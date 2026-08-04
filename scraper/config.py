@@ -33,8 +33,9 @@ CATEGORIES = [
         "keys": ["c8", "c(8)", "(c)(8)", "asylum pending", "pending asylum", "asylum based ead"],
     },
     {
+        # Kept short enough to fit the sidebar select without truncating.
         "id": "c09_aos",
-        "label": "Adjustment of status pending — (c)(9)",
+        "label": "Adjustment of status — (c)(9)",
         "keys": ["c9", "c(9)", "(c)(9)", "i-485 based", "aos based", "combo card", "adjustment of status"],
     },
     {

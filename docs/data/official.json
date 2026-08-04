@@ -1,5 +1,5 @@
 {
- "generated": "2026-08-03T01:46:36+00:00",
+ "generated": "2026-08-04T00:15:24+00:00",
  "period": "FY2026 Q1",
  "buckets": [
   {
@@ -106,7 +106,7 @@
   },
   {
    "id": "c09_aos",
-   "label": "Adjustment of status pending \u2014 (c)(9)",
+   "label": "Adjustment of status \u2014 (c)(9)",
    "history_bucket": "adjustment of status",
    "premium_eligible": false
   },
